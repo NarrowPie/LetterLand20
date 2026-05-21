@@ -45,7 +45,7 @@
                 android:fontFamily="@font/kid_font"
                 android:gravity="center"
                 android:includeFontPadding="false"
-                android:text="STORAGE\nMANAGEMENT"
+                android:text="STORAGE MANAGEMENT"
                 android:textColor="#616161"
                 android:textSize="26sp"
                 app:autoSizeMaxTextSize="26sp"

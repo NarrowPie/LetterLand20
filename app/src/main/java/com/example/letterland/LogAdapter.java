@@ -75,7 +75,7 @@ public class LogAdapter extends RecyclerView.Adapter<LogAdapter.LogViewHolder> {
             details = "Added by: Admin to " + actualPlayerName + "\nDate: " + dateTimeString;
         } else {
             // Ordinary player collection (Scan / Write gameplay modes)
-            details = "Collected by: " + rawProfile + "\nDate: " + dateTimeString;
+            details = "Profile: " + rawProfile + "\nDate: " + dateTimeString;
         }
 
         holder.tvLogDetails.setText(details);

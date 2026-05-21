@@ -66,7 +66,7 @@ public class PlayActivity extends AppCompatActivity {
     private Handler realTimeHandler = new Handler(Looper.getMainLooper());
     private boolean isScanningPaused = false;
 
-    // 🚀 FIX 1: Changed to HashSet for instant O(1) lookups instead of slow O(N) linear scans
+    // HashSet for instant O(1) lookups instead of slow O(N) linear scans
     private final Set<String> DICTIONARY = new HashSet<>();
 
     private ExecutorService cameraExecutor;
@@ -77,7 +77,7 @@ public class PlayActivity extends AppCompatActivity {
             new ActivityResultContracts.TakePicturePreview(),
             bitmap -> {
                 if (bitmap != null && !pendingWord.isEmpty()) {
-                    // 🚀 FIX 2: Used existing executor instead of spawning rogue threads
+                    // Used existing executor instead of spawning rogue threads
                     cameraExecutor.execute(() -> saveToAlmanac(pendingWord, bitmap));
                 } else {
                     Toast.makeText(this, "No picture taken", Toast.LENGTH_SHORT).show();
@@ -188,7 +188,7 @@ public class PlayActivity extends AppCompatActivity {
                         intent.putExtra("WORD_TEXT", savedWord.word);
                         intent.putExtra("IMAGE_PATH", savedWord.imagePath);
                         intent.putExtra("SOURCE_PAGE", "SCANNER");
-                        intent.putExtra("IS_NEW_WORD", false); // 🌟 PREVENTS DELETION EXPLOIT
+                        intent.putExtra("IS_NEW_WORD", false); // PREVENTS DELETION EXPLOIT
                         startActivity(intent);
                     } else {
                         View dialogView = LayoutInflater.from(PlayActivity.this).inflate(R.layout.dialog_new_word, null);
@@ -427,7 +427,7 @@ public class PlayActivity extends AppCompatActivity {
                 intent.putExtra("WORD_TEXT", word);
                 intent.putExtra("IMAGE_PATH", file.getAbsolutePath());
                 intent.putExtra("SOURCE_PAGE", "SCANNER");
-                intent.putExtra("IS_NEW_WORD", true); // 🌟 ALLOWS DELETING JUST THIS ONCE
+                intent.putExtra("IS_NEW_WORD", true); // ALLOWS DELETING JUST THIS ONCE
                 startActivity(intent);
             });
         } catch (java.io.IOException e) {
@@ -438,14 +438,23 @@ public class PlayActivity extends AppCompatActivity {
         }
     }
 
+    // 🚀 OPTIMIZED FUZZY WORD LANE WITH TIGHT CHARACTER LENGTH FILTER
     private String findClosestWord(String scannedWord) {
         if (scannedWord == null || scannedWord.isEmpty()) return "";
-        if (DICTIONARY.contains(scannedWord)) return scannedWord;
+        if (DICTIONARY.contains(scannedWord)) return scannedWord; // Instant O(1) matching gate
+
         String bestMatch = scannedWord;
         int lowestDistance = 999;
         int maxAllowedDifferences = (scannedWord.length() <= 7) ? 1 : 2;
+        int scannedLength = scannedWord.length();
 
         for (String dictionaryWord : DICTIONARY) {
+            // 🚀 OPTIMIZATION GATING: If length variance exceeds allowable edit differences,
+            // a match is structurally impossible. Bypasses calculations instantly.
+            if (Math.abs(scannedLength - dictionaryWord.length()) > maxAllowedDifferences) {
+                continue;
+            }
+
             int distance = calculateEditDistance(scannedWord, dictionaryWord);
             if (distance < lowestDistance && distance <= maxAllowedDifferences) {
                 lowestDistance = distance;
@@ -455,7 +464,7 @@ public class PlayActivity extends AppCompatActivity {
         return bestMatch;
     }
 
-    // 🚀 FIX 3: Replaced the heavy memory-hogging 2D array with a space-optimized 1D array
+    // Replaced heavy memory-hogging 2D array allocations with space-optimized 1D structures
     private int calculateEditDistance(String a, String b) {
         int[] costs = new int[b.length() + 1];
         for (int j = 0; j < costs.length; j++) costs[j] = j;

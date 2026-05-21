@@ -39,33 +39,23 @@ public class SoundManager {
 
         // ✏️ Load the scratch sound
         try {
-            int scratchResId = context.getResources().getIdentifier("scratch", "raw", context.getPackageName());
-            if (scratchResId != 0) {
-                scratchSoundId = soundPool.load(context, scratchResId, 1);
-            }
+            scratchSoundId = soundPool.load(context, R.raw.scratch, 1);
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        // 🎵 Load the background music
+        // 🎵 Initialize background music
         try {
-            int musicResId = context.getResources().getIdentifier("game_music", "raw", context.getPackageName());
-            if(musicResId == 0) {
-                musicResId = R.raw.menu_music;
-            }
-
-            backgroundMusicPlayer = MediaPlayer.create(context.getApplicationContext(), musicResId);
+            backgroundMusicPlayer = MediaPlayer.create(context.getApplicationContext(), R.raw.game_music);
             if (backgroundMusicPlayer != null) {
                 backgroundMusicPlayer.setLooping(true);
-                // 🎵 Initialize with normal volume
-                backgroundMusicPlayer.setVolume(NORMAL_MUSIC_VOLUME, NORMAL_MUSIC_VOLUME);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public static SoundManager getInstance(Context context) {
+    public static synchronized SoundManager getInstance(Context context) {
         if (instance == null) {
             instance = new SoundManager(context.getApplicationContext());
         }
@@ -74,19 +64,43 @@ public class SoundManager {
 
     public void playClick() {
         if (isSoundOn) {
-            soundPool.play(clickSoundId, 1.0f, 1.0f, 0, 0, 1.0f);
+            soundPool.play(clickSoundId, 1.0f, 1.0f, 1, 0, 1.0f);
         }
     }
 
     public void playShutter() {
         if (isSoundOn) {
-            soundPool.play(shutterSoundId, 1.0f, 1.0f, 0, 0, 1.0f);
+            soundPool.play(shutterSoundId, 1.0f, 1.0f, 1, 0, 1.0f);
         }
     }
 
+    // 🚀 NEW: Dynamic Phonics Playback Channel
+    // Automatically drops background music volume, triggers the child's local custom letter .mp3 asset,
+    // and schedules the ambient theme track to recover its depth immediately after the sound bite concludes!
+    public void playPhonicAsset(Context context, int resId) {
+        if (!isSoundOn || resId == 0) return;
+
+        duckBackgroundMusic();
+
+        // Load and sound immediate play-through markers securely
+        int loadedSoundId = soundPool.load(context, resId, 1);
+        soundPool.setOnLoadCompleteListener((soundPool, sampleId, status) -> {
+            if (status == 0) { // 0 = Success
+                soundPool.play(sampleId, 1.0f, 1.0f, 2, 0, 1.0f);
+
+                // Track decay safely and schedule music restoration channel
+                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                    restoreBackgroundMusic();
+                }, 1200); // 1.2 second grace period matches average custom phoneme clip lengths
+            } else {
+                restoreBackgroundMusic();
+            }
+        });
+    }
+
     public void startScratchSound() {
-        if (isSoundOn && scratchSoundId != 0 && scratchStreamId == 0) {
-            scratchStreamId = soundPool.play(scratchSoundId, 1.0f, 1.0f, 0, -1, 1.0f);
+        if (isSoundOn && scratchStreamId == 0) {
+            scratchStreamId = soundPool.play(scratchSoundId, 0.6f, 0.6f, 1, -1, 1.0f);
         }
     }
 
@@ -110,14 +124,14 @@ public class SoundManager {
         }
     }
 
-    // 🌟 Temporarily lower the music volume so the AI voice can be heard
+    // 🌟 Temporarily lower the music volume so the letter sounds can be heard
     public void duckBackgroundMusic() {
         if (isSoundOn && backgroundMusicPlayer != null && backgroundMusicPlayer.isPlaying()) {
             backgroundMusicPlayer.setVolume(DUCKED_MUSIC_VOLUME, DUCKED_MUSIC_VOLUME);
         }
     }
 
-    // 🌟 Restore the music volume after the AI voice finishes speaking
+    // 🌟 Restore the music volume after the asset finishes speaking
     public void restoreBackgroundMusic() {
         if (isSoundOn && backgroundMusicPlayer != null && backgroundMusicPlayer.isPlaying()) {
             backgroundMusicPlayer.setVolume(NORMAL_MUSIC_VOLUME, NORMAL_MUSIC_VOLUME);
@@ -129,6 +143,8 @@ public class SoundManager {
         if (!isSoundOn) {
             pauseBackgroundMusic();
             stopScratchSound();
+        } else {
+            startBackgroundMusic();
         }
     }
 }

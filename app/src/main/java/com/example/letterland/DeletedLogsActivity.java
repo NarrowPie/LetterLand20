@@ -77,7 +77,7 @@ public class DeletedLogsActivity extends AppCompatActivity {
         Glide.with(this).load(imagePath).into(ivRestoreImage);
 
         // Displays clear collection data and explicit action tracing
-        tvRestoreDetails.setText("Object: " + wordName + "\nCollected by: " + profileName + "\nDeleted by: " + deleterName);
+        tvRestoreDetails.setText("Object: " + wordName + "\nPROFILE: " + profileName + "\nPROFILE: " + deleterName);
 
         view.findViewById(R.id.btnCancelRestore).setOnClickListener(v -> {
             SoundManager.getInstance(this).playClick();
@@ -145,7 +145,7 @@ public class DeletedLogsActivity extends AppCompatActivity {
                 String profileName = (parts.length >= 3) ? parts[2] : "Unknown User";
                 String deleterName = (parts.length >= 4) ? parts[3] : profileName;
 
-                holder.tvDeletedWord.setText("Deleted '" + wordName + "'\nBy: " + deleterName);
+                holder.tvDeletedWord.setText("Deleted '" + wordName + "'\nPROFILE: " + deleterName);
 
                 Glide.with(DeletedLogsActivity.this)
                         .load(imagePath)
