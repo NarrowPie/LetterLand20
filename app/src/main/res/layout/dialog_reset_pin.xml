@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="320dp"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    app:cardBackgroundColor="#FFFFFF"
+    app:cardCornerRadius="20dp"
+    app:cardElevation="8dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:gravity="center">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/kid_font"
+            android:text="CHANGE PIN"
+            android:textColor="#333333"
+            android:textSize="28sp" />
+
+        <EditText
+            android:id="@+id/etCurrentPin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:background="#F0F0F0"
+            android:hint="Current PIN"
+            android:textColorHint="#888888"
+            android:textColor="#000000"
+            android:textSize="22sp"
+            android:inputType="numberPassword"
+            android:maxLength="4"
+            android:padding="16dp"
+            android:gravity="center"
+            android:letterSpacing="0.3"/>
+
+        <EditText
+            android:id="@+id/etNewPin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="#F0F0F0"
+            android:hint="New 4-Digit PIN"
+            android:textColorHint="#888888"
+            android:textColor="#000000"
+            android:textSize="18sp"
+            android:inputType="numberPassword"
+            android:maxLength="4"
+            android:padding="16dp"
+            android:gravity="center"
+            android:letterSpacing="0.3"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:orientation="horizontal"
+            android:weightSum="2">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCancelReset"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:fontFamily="@font/kid_font"
+                android:text="CANCEL"
+                android:textColor="#F44336" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnConfirmReset"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:fontFamily="@font/kid_font"
+                android:text="SAVE"
+                android:textColor="#FFFFFF"
+                app:backgroundTint="#4CAF50"
+                app:cornerRadius="12dp" />
+        </LinearLayout>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

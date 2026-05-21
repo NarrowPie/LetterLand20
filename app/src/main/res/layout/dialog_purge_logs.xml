@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="340dp"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    app:cardBackgroundColor="#FFFFFF"
+    app:cardCornerRadius="20dp"
+    app:cardElevation="8dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <ImageView
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:src="@android:drawable/ic_menu_agenda"
+            app:tint="#F57C00" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:fontFamily="@font/kid_font"
+            android:text="SELECT LOGS TO PURGE"
+            android:textColor="#333333"
+            android:textSize="22sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="16dp"
+            android:gravity="center"
+            android:text="Choose which specific database records you want to permanently erase."
+            android:textColor="#888888"
+            android:textSize="14sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnPurgeHistoryLogs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginVertical="4dp"
+            android:fontFamily="@font/kid_font"
+            android:gravity="start|center_vertical"
+            android:padding="12dp"
+            android:text="CLEAR HISTORY LOGS"
+            android:textColor="#FF9800"
+            app:backgroundTint="#FFF3E0"
+            app:cornerRadius="12dp"
+            app:icon="@android:drawable/ic_menu_today"
+            app:iconTint="#FF9800" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnPurgeUserLogs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginVertical="4dp"
+            android:fontFamily="@font/kid_font"
+            android:gravity="start|center_vertical"
+            android:padding="12dp"
+            android:text="CLEAR USER LOGS"
+            android:textColor="#009688"
+            app:backgroundTint="#E0F2F1"
+            app:cornerRadius="12dp"
+            app:icon="@android:drawable/ic_menu_view"
+            app:iconTint="#009688" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnPurgeQuizRecords"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginVertical="4dp"
+            android:fontFamily="@font/kid_font"
+            android:gravity="start|center_vertical"
+            android:padding="12dp"
+            android:text="CLEAR QUIZ SCORES"
+            android:textColor="#9C27B0"
+            app:backgroundTint="#F3E5F5"
+            app:cornerRadius="12dp"
+            app:icon="@android:drawable/ic_menu_sort_by_size"
+            app:iconTint="#9C27B0" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnPurgeDeletedItems"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginVertical="4dp"
+            android:fontFamily="@font/kid_font"
+            android:gravity="start|center_vertical"
+            android:padding="12dp"
+            android:text="CLEAR DELETED HISTORY"
+            android:textColor="#F44336"
+            app:backgroundTint="#FFEBEE"
+            app:cornerRadius="12dp"
+            app:icon="@android:drawable/ic_menu_delete"
+            app:iconTint="#F44336" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCancelPurge"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:fontFamily="@font/kid_font"
+            android:text="CANCEL"
+            android:textColor="#888888" />
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

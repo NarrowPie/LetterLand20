@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="24dp"
+    app:cardBackgroundColor="#FFF9C4"
+    app:cardCornerRadius="32dp"
+    app:cardElevation="12dp"
+    app:strokeColor="#FF9800"
+    app:strokeWidth="6dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginBottom="8dp"
+            android:fontFamily="@font/kid_font"
+            android:gravity="center"
+            android:includeFontPadding="false"
+            android:maxLines="1"
+            android:text="Final Answer?"
+            android:textColor="#FF9800"
+            android:textStyle="bold"
+            app:autoSizeMaxTextSize="36sp"
+            app:autoSizeMinTextSize="20sp"
+            app:autoSizeTextType="uniform" />
+
+        <TextView
+            android:id="@+id/tvConfirmMessage"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:layout_marginBottom="24dp"
+            android:fontFamily="@font/kid_font"
+            android:gravity="center"
+            android:includeFontPadding="false"
+            android:maxLines="2"
+            android:text="Are you sure?"
+            android:textColor="#000000"
+            app:autoSizeMaxTextSize="26sp"
+            app:autoSizeMinTextSize="16sp"
+            app:autoSizeTextType="uniform" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnYesConfirm"
+                android:layout_width="match_parent"
+                android:layout_height="70dp"
+                android:layout_marginBottom="12dp"
+                android:fontFamily="@font/kid_font"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="YES!"
+                android:textColor="#FFFFFF"
+                app:autoSizeMaxTextSize="32sp"
+                app:autoSizeMinTextSize="18sp"
+                app:autoSizeTextType="uniform"
+                app:backgroundTint="#4CAF50"
+                app:cornerRadius="24dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCancelConfirm"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:fontFamily="@font/kid_font"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:text="MAYBE LATER"
+                android:textColor="#FFFFFF"
+                app:autoSizeMaxTextSize="20sp"
+                app:autoSizeMinTextSize="12sp"
+                app:autoSizeTextType="uniform"
+                app:backgroundTint="#FF5252"
+                app:cornerRadius="20dp"
+                app:elevation="0dp"
+                app:strokeWidth="0dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

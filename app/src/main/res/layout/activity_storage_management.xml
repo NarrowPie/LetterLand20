@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F5F5F5"
+    android:fitsSystemWindows="true">
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/headerCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        app:cardBackgroundColor="#EEEEEE"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="6dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="16dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnStorageBack"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/kid_font"
+                android:text="BACK"
+                android:textColor="#FFFFFF"
+                app:backgroundTint="#F44336"
+                app:cornerRadius="20dp"
+                app:icon="@android:drawable/ic_menu_revert" />
+
+            <TextView
+                android:id="@+id/tvStorageTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:fontFamily="@font/kid_font"
+                android:gravity="center"
+                android:includeFontPadding="false"
+                android:text="STORAGE\nMANAGEMENT"
+                android:textColor="#616161"
+                android:textSize="26sp"
+                app:autoSizeMaxTextSize="26sp"
+                app:autoSizeMinTextSize="14sp"
+                app:autoSizeTextType="uniform" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <ScrollView
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:paddingBottom="24dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/headerCard">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp">
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="8dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="4dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnClearCache"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/kid_font"
+                    android:gravity="start|center_vertical"
+                    android:lineSpacingExtra="4dp"
+                    android:minHeight="85dp"
+                    android:paddingStart="20dp"
+                    android:paddingEnd="20dp"
+                    android:text="CLEAR APP CACHE\n(Free Up Temporary Memory)"
+                    android:textColor="#009688"
+                    app:backgroundTint="#E0F2F1"
+                    app:icon="@android:drawable/ic_menu_recent_history"
+                    app:iconGravity="start"
+                    app:iconPadding="16dp"
+                    app:iconSize="32dp"
+                    app:iconTint="#009688" />
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="8dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="4dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnDeleteLogs"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/kid_font"
+                    android:gravity="start|center_vertical"
+                    android:lineSpacingExtra="4dp"
+                    android:minHeight="85dp"
+                    android:paddingStart="20dp"
+                    android:paddingEnd="20dp"
+                    android:text="PURGE SYSTEM LOGS\n(Select Specific Logs to Clear)"
+                    android:textColor="#FF9800"
+                    app:backgroundTint="#FFF3E0"
+                    app:icon="@android:drawable/ic_menu_agenda"
+                    app:iconGravity="start"
+                    app:iconPadding="16dp"
+                    app:iconSize="32dp"
+                    app:iconTint="#FF9800" />
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="8dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="4dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnResetData"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/kid_font"
+                    android:gravity="start|center_vertical"
+                    android:lineSpacingExtra="4dp"
+                    android:minHeight="85dp"
+                    android:paddingStart="20dp"
+                    android:paddingEnd="20dp"
+                    android:text="FACTORY RESET\n(Wipe Entire System Data)"
+                    android:textColor="#F44336"
+                    app:backgroundTint="#FFEBEE"
+                    app:icon="@android:drawable/ic_menu_delete"
+                    app:iconGravity="start"
+                    app:iconPadding="16dp"
+                    app:iconSize="32dp"
+                    app:iconTint="#F44336" />
+            </com.google.android.material.card.MaterialCardView>
+
+        </LinearLayout>
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

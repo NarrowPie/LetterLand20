@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="24dp"
+    android:minWidth="300dp"
+    app:cardBackgroundColor="#FFFFFF"
+    app:cardCornerRadius="28dp"
+    app:cardElevation="10dp"
+    app:strokeColor="#FF9800"
+    app:strokeWidth="6dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:id="@+id/tvDialogTitle"
+            android:layout_width="match_parent"
+            android:layout_height="45dp"
+            android:layout_marginBottom="8dp"
+            android:fontFamily="@font/kid_font"
+            android:gravity="center"
+            android:maxLines="1"
+            android:text="New Object Found!"
+            android:textColor="#FF9800"
+            android:textStyle="bold"
+            app:autoSizeMaxTextSize="28sp"
+            app:autoSizeMinTextSize="14sp"
+            app:autoSizeTextType="uniform" />
+
+        <TextView
+            android:id="@+id/tvDetectedWord"
+            android:layout_width="match_parent"
+            android:layout_height="65dp"
+            android:layout_marginBottom="24dp"
+            android:fontFamily="@font/kid_font"
+            android:gravity="center"
+            android:maxLines="1"
+            android:textColor="#4CAF50"
+            android:textStyle="bold"
+            app:autoSizeMaxTextSize="42sp"
+            app:autoSizeMinTextSize="18sp"
+            app:autoSizeTextType="uniform" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDialogCamera"
+            android:layout_width="match_parent"
+            android:layout_height="75dp"
+            android:layout_marginBottom="16dp"
+            android:fontFamily="@font/kid_font"
+            android:maxLines="1"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:text="TAKE A PICTURE"
+            android:textColor="#FFFFFF"
+            app:autoSizeMaxTextSize="24sp"
+            app:autoSizeMinTextSize="12sp"
+            app:autoSizeTextType="uniform"
+            app:backgroundTint="#4CAF50"
+            app:cornerRadius="24dp"
+            app:icon="@android:drawable/ic_menu_camera"
+            app:iconGravity="textStart"
+            app:iconPadding="8dp"
+            app:iconTint="#FFFFFF" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDialogLater"
+            android:layout_width="match_parent"
+            android:layout_height="75dp"
+            android:fontFamily="@font/kid_font"
+            android:maxLines="1"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:text="MAYBE LATER"
+            android:textColor="#FFFFFF"
+            app:autoSizeMaxTextSize="24sp"
+            app:autoSizeMinTextSize="12sp"
+            app:autoSizeTextType="uniform"
+            app:backgroundTint="#FF5252"
+            app:cornerRadius="24dp"
+            app:icon="@android:drawable/ic_menu_close_clear_cancel"
+            app:iconGravity="textStart"
+            app:iconPadding="8dp"
+            app:iconTint="#FFFFFF" />
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

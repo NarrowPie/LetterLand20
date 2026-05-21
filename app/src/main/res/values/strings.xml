@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">LetterLand</string>
+    <string name="toast_camera_required">Camera permission is required to play! Closing app...</string>
+    <string name="toast_enter_name">Please enter your name first!</string>
+    <string name="toast_incorrect_pin">Incorrect PIN! Access Denied.</string>
+    <string name="tv_select_player">Select Player!</string>
+    <string name="tv_quiz_unlock_hint">Collect %1$d more item(s) in Almanac to unlock!</string>
+    <string name="toast_select_player_first">Please select or create a player first!</string>
+    <string name="toast_admin_select_player">Please select a player from the Main Menu first!</string>
+    <string name="toast_current_pin_incorrect">Current PIN is incorrect!</string>
+    <string name="toast_new_pin_length">New PIN must be 4 digits!</string>
+    <string name="toast_pin_updated">PIN successfully updated!</string>
+</resources>
