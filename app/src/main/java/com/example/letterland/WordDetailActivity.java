@@ -1,6 +1,8 @@
 package com.example.letterland;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.media.AudioAttributes;
 import android.net.Uri;
 import android.os.Build;
@@ -19,6 +21,8 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.Locale;
 
 public class WordDetailActivity extends AppCompatActivity {
@@ -28,6 +32,7 @@ public class WordDetailActivity extends AppCompatActivity {
     private String wordText;
     private String imagePath;
     private String sourcePage;
+    private boolean isNewWord = false;
 
     private TextView tvWord;
     private ImageView ivPicture;
@@ -86,11 +91,41 @@ public class WordDetailActivity extends AppCompatActivity {
         wordText = getIntent().getStringExtra("WORD_TEXT");
         imagePath = getIntent().getStringExtra("IMAGE_PATH");
         sourcePage = getIntent().getStringExtra("SOURCE_PAGE");
-
-        boolean isNewWord = getIntent().getBooleanExtra("IS_NEW_WORD", false);
+        isNewWord = getIntent().getBooleanExtra("IS_NEW_WORD", false);
 
         if (wordText != null) tvWord.setText(wordText);
-        if (imagePath != null) ivPicture.setImageURI(Uri.parse(imagePath));
+
+        if (imagePath != null) {
+            File imgFile = new File(imagePath);
+            if (imgFile.exists()) {
+                ivPicture.setImageBitmap(BitmapFactory.decodeFile(imgFile.getAbsolutePath()));
+            } else {
+                ivPicture.setImageURI(Uri.parse(imagePath));
+            }
+        }
+
+        // 🚀 CRITICAL FIX: Words discovered by kids default to UNSTARRED (false)
+        // Only the Admin Panel can change this flag via the administrative screens!
+        if (isNewWord && ("WRITE".equals(sourcePage) || "SCANNER".equals(sourcePage))) {
+            new Thread(() -> {
+                try {
+                    String player = getSharedPreferences("LetterLandMemory", MODE_PRIVATE).getString("ACTIVE_PROFILE", "Default");
+                    WordEntry checkExist = AppDatabase.getInstance(this).wordDao().findWordForProfile(wordText, player);
+
+                    if (checkExist == null) {
+                        WordEntry newEntry = new WordEntry(wordText, player, imagePath);
+
+                        // 🌟 FIXED HERE: Forces default state to false! Child cannot auto-star items anymore.
+                        newEntry.isStarred = false;
+
+                        AppDatabase.getInstance(this).wordDao().insert(newEntry);
+                        runOnUiThread(() -> Toast.makeText(this, wordText + " saved to Almanac!", Toast.LENGTH_SHORT).show());
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }).start();
+        }
 
         // ==========================================
         // 🌟 SMART VISIBILITY LOGIC + UI CENTERING FIX
@@ -100,18 +135,15 @@ public class WordDetailActivity extends AppCompatActivity {
             if (llWriteControls != null) llWriteControls.setVisibility(View.GONE);
             if (layoutEditButtons != null) layoutEditButtons.setVisibility(View.GONE);
             if (btnSpeak != null) btnSpeak.setVisibility(View.VISIBLE);
-
         } else if ("EDIT_ALMANAC".equals(sourcePage)) {
             if (llScanControls != null) llScanControls.setVisibility(View.GONE);
             if (llWriteControls != null) llWriteControls.setVisibility(View.GONE);
             if (layoutEditButtons != null) layoutEditButtons.setVisibility(View.VISIBLE);
             if (btnSpeak != null) btnSpeak.setVisibility(View.VISIBLE);
-
         } else if ("SCANNER".equals(sourcePage)) {
             if (layoutEditButtons != null) layoutEditButtons.setVisibility(View.GONE);
             if (llWriteControls != null) llWriteControls.setVisibility(View.GONE);
             if (llScanControls != null) llScanControls.setVisibility(View.VISIBLE);
-
             if (btnScanDelete != null && btnScanAgain != null) {
                 if (isNewWord) {
                     btnScanDelete.setVisibility(View.VISIBLE);
@@ -120,20 +152,17 @@ public class WordDetailActivity extends AppCompatActivity {
                     btnScanDelete.setVisibility(View.GONE);
                     btnScanDelete.setClickable(false);
 
-                    // 🌟 THE LAYOUT FIX: Tell the button to consume the full weightSum of 2!
                     LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) btnScanAgain.getLayoutParams();
-                    params.weight = 2.0f; // Fixes the 50% blank screen issue
-                    params.setMarginStart(0); // Removes the lopsided 8dp margin
+                    params.weight = 2.0f;
+                    params.setMarginStart(0);
                     btnScanAgain.setLayoutParams(params);
                 }
             }
             if (btnSpeak != null) btnSpeak.setVisibility(View.VISIBLE);
-
         } else if ("WRITE".equals(sourcePage)) {
             if (layoutEditButtons != null) layoutEditButtons.setVisibility(View.GONE);
             if (llScanControls != null) llScanControls.setVisibility(View.GONE);
             if (llWriteControls != null) llWriteControls.setVisibility(View.VISIBLE);
-
             if (btnWriteDelete != null && btnWriteAgain != null) {
                 if (isNewWord) {
                     btnWriteDelete.setVisibility(View.VISIBLE);
@@ -142,15 +171,13 @@ public class WordDetailActivity extends AppCompatActivity {
                     btnWriteDelete.setVisibility(View.GONE);
                     btnWriteDelete.setClickable(false);
 
-                    // 🌟 THE LAYOUT FIX: Tell the button to consume the full weightSum of 2!
                     LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) btnWriteAgain.getLayoutParams();
-                    params.weight = 2.0f; // Fixes the 50% blank screen issue
-                    params.setMarginStart(0); // Removes the lopsided 8dp margin
+                    params.weight = 2.0f;
+                    params.setMarginStart(0);
                     btnWriteAgain.setLayoutParams(params);
                 }
             }
             if (btnSpeak != null) btnSpeak.setVisibility(View.VISIBLE);
-
         } else {
             if (llScanControls != null) llScanControls.setVisibility(View.GONE);
             if (layoutEditButtons != null) layoutEditButtons.setVisibility(View.GONE);
@@ -223,7 +250,6 @@ public class WordDetailActivity extends AppCompatActivity {
                             if (!newName.isEmpty() && !newName.equals(wordText)) {
                                 new Thread(() -> {
                                     String player = getSharedPreferences("LetterLandMemory", MODE_PRIVATE).getString("ACTIVE_PROFILE", "Default");
-
                                     WordEntry checkExisting = AppDatabase.getInstance(this).wordDao().findWordForProfile(newName, player);
 
                                     if (checkExisting != null) {
@@ -232,7 +258,6 @@ public class WordDetailActivity extends AppCompatActivity {
                                         });
                                     } else {
                                         WordEntry oldEntry = AppDatabase.getInstance(this).wordDao().findWordForProfile(wordText, player);
-
                                         if (oldEntry != null) {
                                             WordEntry newEntry = new WordEntry(newName, oldEntry.profileName, oldEntry.imagePath);
                                             newEntry.isStarred = oldEntry.isStarred;
@@ -257,9 +282,23 @@ public class WordDetailActivity extends AppCompatActivity {
         if (btnDelete != null) btnDelete.setOnClickListener(v -> showCustomDeleteDialog());
         if (btnWriteDelete != null) btnWriteDelete.setOnClickListener(v -> showCustomDeleteDialog());
         if (btnScanDelete != null) btnScanDelete.setOnClickListener(v -> showCustomDeleteDialog());
+
         if (btnScanAgain != null) btnScanAgain.setOnClickListener(v -> finish());
-        if (btnWriteAgain != null) btnWriteAgain.setOnClickListener(v -> finish());
         if (btnBack != null) btnBack.setOnClickListener(v -> finish());
+
+        if (btnWriteAgain != null) {
+            btnWriteAgain.setOnClickListener(v -> {
+                SoundManager.getInstance(this).playClick();
+
+                if (isNewWord) {
+                    Intent intent = new Intent(WordDetailActivity.this, AlmanacActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                    startActivity(intent);
+                }
+
+                finish();
+            });
+        }
     }
 
     private void showCustomDeleteDialog() {
@@ -312,22 +351,24 @@ public class WordDetailActivity extends AppCompatActivity {
             String newImagePath = file.getAbsolutePath();
 
             String player = getSharedPreferences("LetterLandMemory", MODE_PRIVATE).getString("ACTIVE_PROFILE", "Default");
-
             new Thread(() -> {
                 WordEntry oldEntry = AppDatabase.getInstance(this).wordDao().findWordForProfile(wordText, player);
                 boolean wasStarred = oldEntry != null && oldEntry.isStarred;
 
                 WordEntry updatedEntry = new WordEntry(wordText, player, newImagePath);
                 updatedEntry.isStarred = wasStarred;
+
                 AppDatabase.getInstance(this).wordDao().insert(updatedEntry);
 
                 runOnUiThread(() -> {
                     imagePath = newImagePath;
-                    ivPicture.setImageURI(Uri.parse(imagePath));
+                    File imgFile = new File(imagePath);
+                    if (imgFile.exists()) {
+                        ivPicture.setImageBitmap(BitmapFactory.decodeFile(imgFile.getAbsolutePath()));
+                    }
                     Toast.makeText(this, "Picture Updated!", Toast.LENGTH_SHORT).show();
                 });
             }).start();
-
         } catch (java.io.IOException e) {
             e.printStackTrace();
             runOnUiThread(() -> Toast.makeText(this, "Error saving picture!", Toast.LENGTH_SHORT).show());

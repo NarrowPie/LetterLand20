@@ -23,7 +23,7 @@ public class AddObjectActivity extends AppCompatActivity {
     private ImageView ivSelectedImage;
     private Bitmap selectedBitmap = null;
 
-    // 📸 Handles Taking a Picture
+    // Handles Taking a Picture
     private final ActivityResultLauncher<Void> takePictureLauncher = registerForActivityResult(
             new ActivityResultContracts.TakePicturePreview(),
             bitmap -> {
@@ -36,7 +36,7 @@ public class AddObjectActivity extends AppCompatActivity {
             }
     );
 
-    // 🖼️ Handles Picking from Gallery
+    // Handles Picking from Gallery
     private final ActivityResultLauncher<String> pickImageLauncher = registerForActivityResult(
             new ActivityResultContracts.GetContent(),
             uri -> {
@@ -64,8 +64,6 @@ public class AddObjectActivity extends AppCompatActivity {
         MaterialButton btnCamera = findViewById(R.id.btnCamera);
         MaterialButton btnGallery = findViewById(R.id.btnGallery);
         MaterialButton btnSave = findViewById(R.id.btnSaveObject);
-
-        // 🌟 FIXED LAYOUT ID: Matches your layout XML button element symbol 'btnAddObjectBack' perfectly
         MaterialButton btnBack = findViewById(R.id.btnAddObjectBack);
 
         btnBack.setOnClickListener(v -> {
@@ -89,7 +87,7 @@ public class AddObjectActivity extends AppCompatActivity {
         });
     }
 
-    // 🚀 NEW & IMPROVED: Safely scale down images AND fix black background issues!
+    // Safely scale down images AND fix black background issues
     private Bitmap getResizedAndFixedBitmap(Bitmap image, int maxSize) {
         int width = image.getWidth();
         int height = image.getHeight();
@@ -105,7 +103,7 @@ public class AddObjectActivity extends AppCompatActivity {
         Bitmap scaledBitmap = Bitmap.createScaledBitmap(image, width, height, true);
         Bitmap finalBitmap = Bitmap.createBitmap(scaledBitmap.getWidth(), scaledBitmap.getHeight(), Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(finalBitmap);
-        canvas.drawColor(Color.WHITE); // Force white background
+        canvas.drawColor(Color.WHITE);
         canvas.drawBitmap(scaledBitmap, 0, 0, null);
         return finalBitmap;
     }
@@ -122,12 +120,21 @@ public class AddObjectActivity extends AppCompatActivity {
             return;
         }
 
-        new Thread(() -> {
-            String player = getSharedPreferences("LetterLandMemory", MODE_PRIVATE).getString("ACTIVE_PROFILE", "Default");
+        // 🚀 CRITICAL FIX STEP 1: Fetch the profile value safely
+        String activePlayer = getSharedPreferences("LetterLandMemory", MODE_PRIVATE).getString("ACTIVE_PROFILE", "").trim();
 
+        // 🚀 CRITICAL FIX STEP 2: Enforce profile assignment safety check before creating worker loops
+        if (activePlayer.isEmpty()) {
+            Toast.makeText(this, "No active profile! Please select a player profile on the main menu first.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        final String player = activePlayer;
+
+        new Thread(() -> {
+            // Verifies if the word already exists under the active child's profile list
             WordEntry existingWord = AppDatabase.getInstance(this).wordDao().findWordForProfile(word, player);
-            WordEntry existingAdminWord = AppDatabase.getInstance(this).wordDao().findWordForProfile(word, "ADMIN|" + player);
-            if (existingWord != null || existingAdminWord != null) {
+            if (existingWord != null) {
                 runOnUiThread(() -> Toast.makeText(this, "This word already exists in the Almanac!", Toast.LENGTH_SHORT).show());
                 return;
             }
@@ -139,13 +146,24 @@ public class AddObjectActivity extends AppCompatActivity {
                 Bitmap fixedBitmap = getResizedAndFixedBitmap(selectedBitmap, 800);
                 fixedBitmap.compress(Bitmap.CompressFormat.JPEG, 80, out);
 
-                // 🌟 Tag the profile string with ADMIN| prefix so the log row handles attribution cleanly
-                String adminProfileTag = "ADMIN|" + player;
-                WordEntry newEntry = new WordEntry(word, adminProfileTag, file.getAbsolutePath());
+                // Save directly under the validated player name
+                WordEntry newEntry = new WordEntry(word, player, file.getAbsolutePath());
+
+                // 🚀 BONUS STABILITY TWEAK: Set to true so admin additions appear inside Quiz Mode automatically!
+                newEntry.isStarred = true;
+
                 AppDatabase.getInstance(this).wordDao().insert(newEntry);
 
+                // Explicitly tracks the admin panel addition inside your custom application audit logger rows
+                try {
+                    String logDetails = word + "|" + file.getAbsolutePath() + "|" + player;
+                    AppDatabase.getInstance(this).logDao().insertLog(new LogEntry("ADMIN ADDED WORD", logDetails, System.currentTimeMillis()));
+                } catch (Exception logEx) {
+                    logEx.printStackTrace();
+                }
+
                 runOnUiThread(() -> {
-                    Toast.makeText(this, word + " successfully added to Almanac!", Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, word + " successfully added to " + player + "'s Almanac!", Toast.LENGTH_LONG).show();
                     finish();
                 });
             } catch (IOException e) {
