@@ -14,6 +14,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -43,6 +44,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -53,12 +55,14 @@ public class QuizActivity extends AppCompatActivity {
     private ImageView ivQuizImage;
     private MaterialButton btnSpeakLiveText;
 
-    private DigitalInkRecognizer recognizer;
+    // 🧩 Hangman Hint Display Elements
+    private LinearLayout llHangmanContainer;
+    private TextView tvHangmanMask;
 
+    private DigitalInkRecognizer recognizer;
     // TTS Variables
     private TextToSpeech textToSpeech;
     private boolean isTtsReady = false;
-
     private final Handler scanHandler = new Handler(Looper.getMainLooper());
     private Runnable scanRunnable;
 
@@ -82,6 +86,10 @@ public class QuizActivity extends AppCompatActivity {
     private MaterialButton btnBumperStart;
     private boolean isFirstLevelLoaded = false;
 
+    // 🕹️ Handicap State Trackers
+    private String targetSolutionWord = "";
+    private char[] currentMaskedDisplayArray;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -93,24 +101,25 @@ public class QuizActivity extends AppCompatActivity {
         ivQuizImage = findViewById(R.id.ivQuizImage);
         btnSpeakLiveText = findViewById(R.id.btnSpeakLiveText);
 
+        // Bind Puzzle Containers
+        llHangmanContainer = findViewById(R.id.llHangmanContainer);
+        tvHangmanMask = findViewById(R.id.tvHangmanMask);
+
         // Setup Bumper UI
         layoutBumper = findViewById(R.id.layoutBumper);
         tvBumperLoading = findViewById(R.id.tvBumperLoading);
         pbBumperLoading = findViewById(R.id.pbBumperLoading);
         btnBumperStart = findViewById(R.id.btnBumperStart);
 
-        // This click listener does nothing but prevents touches from passing through the bumper
         layoutBumper.setOnClickListener(v -> {});
 
         btnBumperStart.setOnClickListener(v -> {
             SoundManager.getInstance(this).playClick();
-            // Fade out the bumper smoothly
             layoutBumper.animate()
                     .alpha(0f)
                     .setDuration(300)
                     .withEndAction(() -> {
                         layoutBumper.setVisibility(View.GONE);
-                        // 🚀 THE TRICK: We start the real Level 1 only AFTER pressing start!
                         loadCurrentQuestion();
                     });
         });
@@ -128,13 +137,10 @@ public class QuizActivity extends AppCompatActivity {
             }
         });
 
-        // Initialize TextToSpeech
         textToSpeech = new TextToSpeech(this, status -> {
             if (status == TextToSpeech.SUCCESS) {
                 int result = textToSpeech.setLanguage(Locale.US);
-                if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                    runOnUiThread(() -> Toast.makeText(this, "Voice language not supported.", Toast.LENGTH_SHORT).show());
-                } else {
+                if (result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED) {
                     isTtsReady = true;
                 }
             }
@@ -145,12 +151,10 @@ public class QuizActivity extends AppCompatActivity {
             public void onStart(String utteranceId) {
                 SoundManager.getInstance(getApplicationContext()).duckBackgroundMusic();
             }
-
             @Override
             public void onDone(String utteranceId) {
                 SoundManager.getInstance(getApplicationContext()).restoreBackgroundMusic();
             }
-
             @Override
             public void onError(String utteranceId) {
                 SoundManager.getInstance(getApplicationContext()).restoreBackgroundMusic();
@@ -162,7 +166,10 @@ public class QuizActivity extends AppCompatActivity {
                 Toast.makeText(this, "Voice is loading...", Toast.LENGTH_SHORT).show();
                 return;
             }
-            if (currentlyDetectedWord != null && !currentlyDetectedWord.isEmpty() && !currentlyDetectedWord.equals("...")) {
+
+            String speechPayload = currentlyDetectedWord;
+
+            if (speechPayload != null && !speechPayload.isEmpty() && !speechPayload.equals("...")) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                     AudioAttributes audioAttributes = new AudioAttributes.Builder()
                             .setUsage(AudioAttributes.USAGE_ASSISTANCE_ACCESSIBILITY)
@@ -171,9 +178,9 @@ public class QuizActivity extends AppCompatActivity {
                     textToSpeech.setAudioAttributes(audioAttributes);
                     Bundle params = new Bundle();
                     params.putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, 1.0f);
-                    textToSpeech.speak(currentlyDetectedWord, TextToSpeech.QUEUE_ADD, params, "TTS_ID");
+                    textToSpeech.speak(speechPayload, TextToSpeech.QUEUE_FLUSH, params, "QUIZ_TTS_ID");
                 } else {
-                    textToSpeech.speak(currentlyDetectedWord, TextToSpeech.QUEUE_ADD, null, "TTS_ID");
+                    textToSpeech.speak(speechPayload, TextToSpeech.QUEUE_FLUSH, null, "QUIZ_TTS_ID");
                 }
             } else {
                 Toast.makeText(this, "Write an answer first!", Toast.LENGTH_SHORT).show();
@@ -181,7 +188,6 @@ public class QuizActivity extends AppCompatActivity {
         });
 
         tvLiveText.setText("Loading......");
-
         try {
             DigitalInkRecognitionModelIdentifier modelIdentifier = DigitalInkRecognitionModelIdentifier.fromLanguageTag("en-US");
             DigitalInkRecognitionModel model = DigitalInkRecognitionModel.builder(modelIdentifier).build();
@@ -217,7 +223,7 @@ public class QuizActivity extends AppCompatActivity {
             public void onDrawFinished() {
                 SoundManager.getInstance(QuizActivity.this).stopScratchSound();
                 scanRunnable = () -> performScan();
-                scanHandler.postDelayed(scanRunnable, 400);
+                scanHandler.postDelayed(scanRunnable, 500);
             }
         });
 
@@ -232,7 +238,6 @@ public class QuizActivity extends AppCompatActivity {
             showCustomConfirmDialog();
         });
 
-        // FIXED: Safe background fetching
         databaseExecutor.execute(() -> {
             String player = getSharedPreferences("LetterLandMemory", MODE_PRIVATE).getString("ACTIVE_PROFILE", "Default");
             List<WordEntry> quizReadyWords = AppDatabase.getInstance(this).wordDao().getStarredWordsForProfile(player);
@@ -246,8 +251,6 @@ public class QuizActivity extends AppCompatActivity {
                     Collections.shuffle(quizReadyWords);
                     int limit = Math.min(quizReadyWords.size(), 10);
                     quizWords = quizReadyWords.subList(0, limit);
-
-                    // 🚀 THE TRICK: Load the decoy image to absorb the glitch first!
                     loadSacrificialDummyImage();
                 }
             });
@@ -269,7 +272,6 @@ public class QuizActivity extends AppCompatActivity {
 
     private void showLockedDialog() {
         if (isFinishing() || isDestroyed()) return;
-
         lockedDialog = new Dialog(this);
         lockedDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         lockedDialog.setContentView(R.layout.dialog_mode_locked);
@@ -288,14 +290,11 @@ public class QuizActivity extends AppCompatActivity {
             startActivity(intent);
             finish();
         });
-
         lockedDialog.show();
     }
 
-    // 🚀 The Decoy: Absorbs the first-load glitch behind the Bumper
     private void loadSacrificialDummyImage() {
         if (isFinishing() || isDestroyed()) return;
-
         RequestListener<Drawable> requestListener = new RequestListener<Drawable>() {
             @Override
             public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
@@ -308,9 +307,8 @@ public class QuizActivity extends AppCompatActivity {
                 return false;
             }
         };
-
         Glide.with(this)
-                .load(R.drawable.title_logo) // Using your logo as the sacrificial image
+                .load(R.drawable.title_logo)
                 .override(250, 250)
                 .centerCrop()
                 .listener(requestListener)
@@ -326,15 +324,14 @@ public class QuizActivity extends AppCompatActivity {
 
     private void loadCurrentQuestion() {
         if (isFinishing() || isDestroyed()) return;
-
         try {
             resetCanvasAndText();
             tvProgress.setText((currentQuestionIndex + 1) + "/" + quizWords.size());
 
             WordEntry currentWord = quizWords.get(currentQuestionIndex);
+            targetSolutionWord = currentWord.word.toUpperCase().trim();
 
             if (currentWord.imagePath != null && !currentWord.imagePath.isEmpty()) {
-                // The decoy took the hit, so this will now load smoothly like Level 2!
                 Glide.with(this)
                         .load(currentWord.imagePath)
                         .override(250, 250)
@@ -342,18 +339,91 @@ public class QuizActivity extends AppCompatActivity {
                         .diskCacheStrategy(DiskCacheStrategy.ALL)
                         .error(R.drawable.title_logo)
                         .into(ivQuizImage);
-
             } else {
                 ivQuizImage.setImageDrawable(null);
             }
+
+            llHangmanContainer.setVisibility(View.VISIBLE);
+            generatePuzzleMask(targetSolutionWord);
+            executeStandardQuizVoiceInstruction();
+
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+    private void generatePuzzleMask(String word) {
+        int len = word.length();
+        currentMaskedDisplayArray = new char[len];
+
+        if (len <= 2) {
+            for (int i = 0; i < len; i++) {
+                currentMaskedDisplayArray[i] = '_';
+            }
+        } else if (len == 3) {
+            for (int i = 0; i < len; i++) {
+                currentMaskedDisplayArray[i] = '_';
+            }
+        } else if (len == 4) {
+            currentMaskedDisplayArray[0] = word.charAt(0);
+            currentMaskedDisplayArray[1] = '_';
+            currentMaskedDisplayArray[2] = '_';
+            currentMaskedDisplayArray[3] = '_';
+        } else if (len == 5) {
+            currentMaskedDisplayArray[0] = word.charAt(0);
+            currentMaskedDisplayArray[len - 1] = word.charAt(len - 1);
+            for (int i = 1; i < len - 1; i++) {
+                currentMaskedDisplayArray[i] = '_';
+            }
+        } else {
+            currentMaskedDisplayArray[0] = word.charAt(0);
+            currentMaskedDisplayArray[len - 1] = word.charAt(len - 1);
+
+            Random random = new Random();
+            for (int i = 1; i < len - 1; i++) {
+                if (random.nextFloat() < 0.60f) {
+                    currentMaskedDisplayArray[i] = '_';
+                } else {
+                    currentMaskedDisplayArray[i] = word.charAt(i);
+                }
+            }
+
+            boolean hasBlank = false;
+            for (char c : currentMaskedDisplayArray) {
+                if (c == '_') {
+                    hasBlank = true;
+                    break;
+                }
+            }
+            if (!hasBlank) {
+                int safeIndex = 1 + random.nextInt(len - 2);
+                currentMaskedDisplayArray[safeIndex] = '_';
+            }
+        }
+        renderMaskedPuzzleField();
+    }
+
+    private void renderMaskedPuzzleField() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < currentMaskedDisplayArray.length; i++) {
+            sb.append(currentMaskedDisplayArray[i]);
+            if (i < currentMaskedDisplayArray.length - 1) {
+                // 🌟 REMARK: Standard single space separation ensures high-capacity 12-letter lines scale correctly inside your auto-sizing TextView
+                sb.append(" ");
+            }
+        }
+        tvHangmanMask.setText(sb.toString());
+    }
+
+    private void executeStandardQuizVoiceInstruction() {
+        if (isTtsReady) {
+            textToSpeech.speak("Look at the picture. Can you write the correct word below?",
+                    TextToSpeech.QUEUE_FLUSH, null, "VOICE_PROMPT");
+        }
+    }
+
     private void showZoomedImageDialog() {
         if (isFinishing() || isDestroyed()) return;
-
         SoundManager.getInstance(this).playClick();
 
         zoomDialog = new Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
@@ -366,7 +436,6 @@ public class QuizActivity extends AppCompatActivity {
 
         ImageView ivZoomed = zoomDialog.findViewById(R.id.ivZoomedImage);
         WordEntry currentWord = quizWords.get(currentQuestionIndex);
-
         if (currentWord.imagePath != null && !currentWord.imagePath.isEmpty()) {
             Glide.with(zoomDialog.getContext())
                     .load(currentWord.imagePath)
@@ -381,18 +450,15 @@ public class QuizActivity extends AppCompatActivity {
             SoundManager.getInstance(this).playClick();
             zoomDialog.dismiss();
         });
-
         zoomDialog.show();
     }
 
     private void showCustomConfirmDialog() {
         if (isFinishing() || isDestroyed()) return;
-
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_quiz_confirm, null);
         confirmDialog = new AlertDialog.Builder(this)
                 .setView(dialogView)
                 .create();
-
         if (confirmDialog.getWindow() != null) {
             confirmDialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
         }
@@ -404,7 +470,6 @@ public class QuizActivity extends AppCompatActivity {
             SoundManager.getInstance(this).playClick();
             confirmDialog.dismiss();
         });
-
         dialogView.findViewById(R.id.btnYesConfirm).setOnClickListener(v1 -> {
             SoundManager.getInstance(this).playClick();
             confirmDialog.dismiss();
@@ -420,13 +485,11 @@ public class QuizActivity extends AppCompatActivity {
                 goToResults();
             }
         });
-
         confirmDialog.show();
     }
 
     private void goToResults() {
         if (scanRunnable != null) scanHandler.removeCallbacks(scanRunnable);
-
         int finalScore = 0;
         for (int i = 0; i < correctAnswers.size(); i++) {
             if (correctAnswers.get(i).equalsIgnoreCase(userAnswers.get(i))) {
@@ -434,8 +497,6 @@ public class QuizActivity extends AppCompatActivity {
             }
         }
         final int score = finalScore;
-
-        // FIXED: Save the quiz result off the main thread to prevent UI freezing
         databaseExecutor.execute(() -> {
             String player = getSharedPreferences("LetterLandMemory", MODE_PRIVATE).getString("ACTIVE_PROFILE", "Default");
             long currentTime = System.currentTimeMillis();
@@ -456,7 +517,6 @@ public class QuizActivity extends AppCompatActivity {
 
     private void resetCanvasAndText() {
         drawingView.clearCanvas();
-
         if (recognizer == null) {
             tvLiveText.setText("Loading AI...");
         } else {
@@ -469,7 +529,6 @@ public class QuizActivity extends AppCompatActivity {
 
     private void performScan() {
         if (isFinishing() || isDestroyed()) return;
-
         if (recognizer == null) {
             tvLiveText.setText("Loading AI...");
             return;
@@ -477,7 +536,6 @@ public class QuizActivity extends AppCompatActivity {
 
         Ink ink = drawingView.getInk();
         if (ink.getStrokes().isEmpty()) return;
-
         recognizer.recognize(ink)
                 .addOnSuccessListener(result -> {
                     if (isFinishing() || isDestroyed()) return;
@@ -505,12 +563,10 @@ public class QuizActivity extends AppCompatActivity {
             textToSpeech.shutdown();
         }
 
-        // FIXED: Dismiss dialogs so app doesn't crash on rotation
         if (lockedDialog != null && lockedDialog.isShowing()) lockedDialog.dismiss();
         if (zoomDialog != null && zoomDialog.isShowing()) zoomDialog.dismiss();
         if (confirmDialog != null && confirmDialog.isShowing()) confirmDialog.dismiss();
 
-        // FIXED: Properly kill the background thread
         if (databaseExecutor != null && !databaseExecutor.isShutdown()) {
             databaseExecutor.shutdown();
         }
