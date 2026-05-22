@@ -196,7 +196,6 @@ public class WriteActivity extends AppCompatActivity {
 
         // Asynchronously populate dictionary indices
         new Thread(this::loadDictionaryData).start();
-
         tvLiveText.setText("Loading Model...");
 
         try {
@@ -284,6 +283,130 @@ public class WriteActivity extends AppCompatActivity {
         }
     }
 
+    private void setupSpeechListener() {
+        speechRecognizer.setRecognitionListener(new RecognitionListener() {
+            @Override
+            public void onReadyForSpeech(Bundle params) {
+                if (tvVoiceStatus != null && rawVoiceOutputBuffer.isEmpty()) {
+                    tvVoiceStatus.setText("Speak now!");
+                }
+            }
+
+            @Override
+            public void onBeginningOfSpeech() {}
+            @Override
+            public void onRmsChanged(float rmsdB) {}
+            @Override
+            public void onBufferReceived(byte[] buffer) {}
+
+            @Override
+            public void onEndOfSpeech() {
+                if (tvVoiceStatus != null && !rawVoiceOutputBuffer.isEmpty()) {
+                    tvVoiceStatus.setText("Heard: " + rawVoiceOutputBuffer + "\nTap PROCEED to trace!");
+                }
+            }
+
+            @Override
+            public void onError(int error) {
+                if (tvVoiceStatus == null) return;
+                switch (error) {
+                    case SpeechRecognizer.ERROR_SPEECH_TIMEOUT:
+                        tvVoiceStatus.setText("Please say your word!");
+                        break;
+                    case SpeechRecognizer.ERROR_NO_MATCH:
+                        tvVoiceStatus.setText("Didn't catch that. Try again!");
+                        break;
+                    default:
+                        tvVoiceStatus.setText("Tap Retry to speak.");
+                        break;
+                }
+            }
+
+            @Override
+            public void onPartialResults(Bundle partialResults) {
+                processVoiceResults(partialResults);
+            }
+
+            @Override
+            public void onResults(Bundle results) {
+                processVoiceResults(results);
+            }
+
+            @Override
+            public void onEvent(int eventType, Bundle params) {}
+        });
+    }
+
+    private void processVoiceResults(Bundle bundle) {
+        ArrayList<String> matches = bundle.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+        if (matches != null && !matches.isEmpty() && tvVoiceStatus != null) {
+            String rawInput = matches.get(0);
+            rawVoiceOutputBuffer = cleanAndVerifySpeechInput(rawInput, matches);
+            tvVoiceStatus.setText("Heard: " + rawVoiceOutputBuffer);
+        }
+    }
+
+    private String cleanAndVerifySpeechInput(String primeText, ArrayList<String> alternatives) {
+        String input = primeText.toUpperCase().trim();
+        for (String candidate : alternatives) {
+            String cleanCand = candidate.toUpperCase().trim();
+            if (DICTIONARY.contains(cleanCand)) {
+                return cleanCand;
+            }
+        }
+
+        if (input.equals("RIGHT") || input.equals("RIDE") || input.equals("RITES")) {
+            return "WRITE";
+        }
+
+        if (input.contains(" ") && !DICTIONARY.contains(input)) {
+            input = input.substring(0, input.indexOf(" "));
+        }
+
+        return input;
+    }
+
+    private void performScan() {
+        if (isFinishing() || isDestroyed() || recognizer == null) return;
+        Ink ink = drawingView.getInk();
+        if (ink.getStrokes().isEmpty()) return;
+
+        recognizer.recognize(ink)
+                .addOnSuccessListener(result -> {
+                    if (isFinishing() || isDestroyed() || result.getCandidates().isEmpty()) return;
+
+                    String cleanWord = result.getCandidates().get(0).getText().toUpperCase().trim();
+
+                    // 🌟 PROTECTIVE CAP ENFORCED: Strict 12-letter limit bounds applied seamlessly
+                    if (cleanWord.length() > 12) {
+                        cleanWord = cleanWord.substring(0, 12);
+                    }
+
+                    isVoiceInputActive = false;
+                    currentlyDetectedWord = cleanWord;
+                    tvLiveText.setText(cleanWord);
+
+                    if (!cleanWord.isEmpty()) {
+                        String newlyWrittenLetter = cleanWord.substring(cleanWord.length() - 1);
+                        int currentLength = cleanWord.length();
+
+                        if (!newlyWrittenLetter.equals(lastSpokenLetter) || currentLength != lastSpokenWordLength) {
+                            lastSpokenLetter = newlyWrittenLetter;
+                            lastSpokenWordLength = currentLength;
+                            playLocalLetterSound(newlyWrittenLetter);
+                        }
+                    }
+                });
+    }
+
+    private void playLocalLetterSound(String letter) {
+        String resName = letter.toLowerCase().trim();
+        int resId = getResources().getIdentifier(resName, "raw", getPackageName());
+        if (resId != 0) {
+            SoundManager.getInstance(this).playPhonicAsset(this, resId);
+        }
+    }
+
     private String mapIsolatedLetter(String text) {
         if (text == null || text.trim().length() != 1) {
             return text;
@@ -335,7 +458,6 @@ public class WriteActivity extends AppCompatActivity {
                 .setCancelable(false)
                 .setView(dialogView)
                 .create();
-
         if (voiceDialog.getWindow() != null) {
             voiceDialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));
         }
@@ -379,126 +501,8 @@ public class WriteActivity extends AppCompatActivity {
         speechRecognizer.startListening(speechIntent);
     }
 
-    private void setupSpeechListener() {
-        speechRecognizer.setRecognitionListener(new RecognitionListener() {
-            @Override
-            public void onReadyForSpeech(Bundle params) {
-                if (tvVoiceStatus != null && rawVoiceOutputBuffer.isEmpty()) {
-                    tvVoiceStatus.setText("Speak now!");
-                }
-            }
-
-            @Override
-            public void onBeginningOfSpeech() {}
-            @Override
-            public void onRmsChanged(float rmsdB) {}
-            @Override
-            public void onBufferReceived(byte[] buffer) {}
-
-            @Override
-            public void onEndOfSpeech() {
-                if (tvVoiceStatus != null && !rawVoiceOutputBuffer.isEmpty()) {
-                    tvVoiceStatus.setText("Heard: " + rawVoiceOutputBuffer + "\nTap PROCEED to trace!");
-                }
-            }
-
-            @Override
-            public void onError(int error) {
-                if (tvVoiceStatus == null) return;
-                switch (error) {
-                    case SpeechRecognizer.ERROR_SPEECH_TIMEOUT: tvVoiceStatus.setText("Please say your word!"); break;
-                    case SpeechRecognizer.ERROR_NO_MATCH: tvVoiceStatus.setText("Didn't catch that. Try again!"); break;
-                    default: tvVoiceStatus.setText("Tap Retry to speak."); break;
-                }
-            }
-
-            @Override
-            public void onPartialResults(Bundle partialResults) {
-                processVoiceResults(partialResults);
-            }
-
-            @Override
-            public void onResults(Bundle results) {
-                processVoiceResults(results);
-            }
-
-            @Override
-            public void onEvent(int eventType, Bundle params) {}
-        });
-    }
-
-    private void processVoiceResults(Bundle bundle) {
-        ArrayList<String> matches = bundle.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-        if (matches != null && !matches.isEmpty() && tvVoiceStatus != null) {
-            String rawInput = matches.get(0);
-            rawVoiceOutputBuffer = cleanAndVerifySpeechInput(rawInput, matches);
-            tvVoiceStatus.setText("Heard: " + rawVoiceOutputBuffer);
-        }
-    }
-
-    private String cleanAndVerifySpeechInput(String primeText, ArrayList<String> alternatives) {
-        String input = primeText.toUpperCase().trim();
-
-        for (String candidate : alternatives) {
-            String cleanCand = candidate.toUpperCase().trim();
-            if (DICTIONARY.contains(cleanCand)) {
-                return cleanCand;
-            }
-        }
-
-        if (input.equals("RIGHT") || input.equals("RIDE") || input.equals("RITES")) {
-            return "WRITE";
-        }
-
-        if (input.contains(" ") && !DICTIONARY.contains(input)) {
-            input = input.substring(0, input.indexOf(" "));
-        }
-
-        return input;
-    }
-
-    private void performScan() {
-        if (isFinishing() || isDestroyed() || recognizer == null) return;
-
-        Ink ink = drawingView.getInk();
-        if (ink.getStrokes().isEmpty()) return;
-
-        recognizer.recognize(ink)
-                .addOnSuccessListener(result -> {
-                    if (isFinishing() || isDestroyed() || result.getCandidates().isEmpty()) return;
-
-                    String cleanWord = result.getCandidates().get(0).getText().toUpperCase().trim();
-                    if (cleanWord.length() > 15) cleanWord = cleanWord.substring(0, 15);
-
-                    isVoiceInputActive = false;
-                    currentlyDetectedWord = cleanWord;
-                    tvLiveText.setText(cleanWord);
-
-                    if (!cleanWord.isEmpty()) {
-                        String newlyWrittenLetter = cleanWord.substring(cleanWord.length() - 1);
-                        int currentLength = cleanWord.length();
-
-                        if (!newlyWrittenLetter.equals(lastSpokenLetter) || currentLength != lastSpokenWordLength) {
-                            lastSpokenLetter = newlyWrittenLetter;
-                            lastSpokenWordLength = currentLength;
-                            playLocalLetterSound(newlyWrittenLetter);
-                        }
-                    }
-                });
-    }
-
-    private void playLocalLetterSound(String letter) {
-        String resName = letter.toLowerCase().trim();
-        int resId = getResources().getIdentifier(resName, "raw", getPackageName());
-        if (resId != 0) {
-            SoundManager.getInstance(this).playPhonicAsset(this, resId);
-        }
-    }
-
-    // Direct Audio Utility Pipeline Method with Flushed Queue Execution
     private void speakTextDirectly(String textToSpeak) {
         String optimizedString = mapIsolatedLetter(textToSpeak);
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             AudioAttributes audioAttributes = new AudioAttributes.Builder()
                     .setUsage(AudioAttributes.USAGE_ASSISTANCE_ACCESSIBILITY)
@@ -546,7 +550,6 @@ public class WriteActivity extends AppCompatActivity {
 
     private String findPhoneticMatch(String scannedWord) {
         if (scannedWord == null || scannedWord.isEmpty() || DICTIONARY.contains(scannedWord)) return scannedWord;
-
         String scannedSoundex = getSoundexCode(scannedWord);
         for (String dictionaryWord : DICTIONARY) {
             if (getSoundexCode(dictionaryWord).equals(scannedSoundex)) {
@@ -561,7 +564,6 @@ public class WriteActivity extends AppCompatActivity {
         char[] x = s.toUpperCase().toCharArray();
         StringBuilder buffer = new StringBuilder();
         buffer.append(x[0]);
-
         for (int i = 1; i < x.length; i++) {
             switch (x[i]) {
                 case 'B': case 'F': case 'P': case 'V': buffer.append('1'); break;
@@ -585,17 +587,14 @@ public class WriteActivity extends AppCompatActivity {
 
     private void showNewWordDialog(String wordToSave) {
         if (isFinishing() || isDestroyed()) return;
-
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_new_word, null);
         AlertDialog newWordDialog = new AlertDialog.Builder(this).setView(dialogView).create();
-
         if (newWordDialog.getWindow() != null) {
             newWordDialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));
         }
 
         TextView tvDetected = dialogView.findViewById(R.id.tvDetectedWord);
         tvDetected.setText(wordToSave);
-
         dialogView.findViewById(R.id.btnDialogCamera).setOnClickListener(v1 -> {
             SoundManager.getInstance(this).playShutter();
             pendingWord = wordToSave;
@@ -608,7 +607,6 @@ public class WriteActivity extends AppCompatActivity {
             newWordDialog.dismiss();
             resetCanvasAndText();
         });
-
         newWordDialog.setCancelable(false);
         newWordDialog.show();
     }
@@ -636,7 +634,6 @@ public class WriteActivity extends AppCompatActivity {
 
         // Remove any active delay triggers to safeguard resource leaks
         spamHandler.removeCallbacksAndMessages(null);
-
         if (speechRecognizer != null) {
             speechRecognizer.cancel();
         }
